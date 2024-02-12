@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func startRepl() {
+func startRepl(cfg *config) {
 	scanner := bufio.NewScanner(os.Stdin)
 	commandMap := loadCommands()
 
@@ -21,7 +21,27 @@ func startRepl() {
 
 		command, exists := commandMap[input[0]]
 		if exists {
-			err := command.callback()
+			if input[0] == "explore" {
+				if len(input) == 1 {
+					cfg.specificLocation = nil
+				} else if len(input) == 2 {
+					cfg.specificLocation = &input[1]
+				} else if len(input) > 2 {
+					fmt.Println("Only enter one location id or name after the explore command")
+					continue
+				}
+			}
+			if input[0] == "catch" {
+				if len(input) == 1 {
+					cfg.specificPokemon = nil
+				} else if len(input) == 2 {
+					cfg.specificPokemon = &input[1]
+				} else if len(input) > 2 {
+					fmt.Println("Only enter one Pokemon id or name after the catch command")
+					continue
+				}
+			}
+			err := command.callback(cfg)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -37,45 +57,4 @@ func cleanInput(text string) []string {
 	output := strings.ToLower(text)
 	words := strings.Fields(output)
 	return words
-}
-
-type cliCommand struct {
-	name        string
-	description string
-	callback    func() error
-}
-
-func loadCommands() map[string]cliCommand {
-
-	return map[string]cliCommand{
-		"help": {
-			name:        "help",
-			description: "Displays a help message",
-			callback:    commandHelp,
-		},
-		"exit": {
-			name:        "exit",
-			description: "Exit the Pokedex",
-			callback:    commandExit,
-		},
-	}
-}
-
-func commandHelp() error {
-	fmt.Println()
-	fmt.Println("Welcome to the Pokedex!")
-	fmt.Println("Usage:")
-	fmt.Println()
-	for _, cmd := range loadCommands() {
-		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
-	}
-	fmt.Println()
-
-	return nil
-}
-
-func commandExit() error {
-	fmt.Println("Thank you for using PokedexCLI! See you soon")
-	os.Exit(0)
-	return nil
 }
