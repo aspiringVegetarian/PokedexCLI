@@ -31,13 +31,17 @@ func startRepl(cfg *config) {
 					continue
 				}
 			}
-			if input[0] == "catch" {
+			if input[0] == "catch" || input[0] == "pokedex" {
 				if len(input) == 1 {
 					cfg.specificPokemon = nil
 				} else if len(input) == 2 {
 					cfg.specificPokemon = &input[1]
 				} else if len(input) > 2 {
-					fmt.Println("Only enter one Pokemon id or name after the catch command")
+					if input[0] == "catch" {
+						fmt.Println("Please enter only one Pokemon id or name after the catch command")
+					} else {
+						fmt.Println("Please enter only one Pokemon name after the pokedex command")
+					}
 					continue
 				}
 			}

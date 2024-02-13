@@ -45,8 +45,8 @@ func loadCommands() map[string]cliCommand {
 		"pokemon": {
 			name: "pokemon",
 			description: "Explore Pokemon that can be caught within the Pokemon games.\n" +
-				"     Each call of the command displays the names of 20 Pokemon in the Pokemon world.\n" +
-				"     Each subsequent call to the command will display the next 20 pokemon.",
+				"         Each call of the command displays the names of 20 Pokemon in the Pokemon world.\n" +
+				"         Each subsequent call to the command will display the next 20 pokemon.",
 			callback: commandPokemon,
 		},
 		"pokemonb": {
@@ -59,6 +59,18 @@ func loadCommands() map[string]cliCommand {
 			description: "Attempt to catch a specific Pokemon. Pass in a valid Pokemon name or id following the command, or it will try to catch a random Pokemon.",
 			callback:    commandCatch,
 		},
+		"pokedex": {
+			name: "pokedex",
+			description: "Show information for any Pokemon in your Pokedex (must have encountered via catch command).\n" +
+				"         Provide a Pokemon name following the command.\n" +
+				"         If you do not provide a name following the command, all of the Pokemon in your Pokedex will be listed.",
+			callback: commandPokedex,
+		},
+		"team": {
+			name:        "team",
+			description: "Lists the Pokemon you have caught.",
+			callback:    commandTeam,
+		},
 	}
 }
 
@@ -69,9 +81,8 @@ func commandHelp(cfg *config) error {
 	fmt.Println("Usage:")
 	fmt.Println()
 	for _, cmd := range loadCommands() {
-		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
+		fmt.Printf("%s: %s\n\n", cmd.name, cmd.description)
 	}
-	fmt.Println()
 
 	return nil
 }
@@ -286,6 +297,62 @@ func commandCatch(cfg *config) error {
 			fmt.Println()
 		}
 	}
+
+	return nil
+}
+
+func commandPokedex(cfg *config) error {
+
+	if cfg.specificPokemon == nil {
+		//k := rand.Intn(len(cfg.pokedexSeen))
+		fmt.Printf("\nYou have the following Pokemon in your Pokedex: ")
+		for name, _ := range cfg.pokedexSeen {
+			fmt.Printf("\n * %s", name)
+		}
+		fmt.Printf("\n\nUse the pokedex command with any of the Pokemon names listed to see more info.\n")
+		return nil
+	} else {
+		info := cfg.pokedexSeen[*cfg.specificPokemon]
+		givenName, caught := cfg.pokedexCaught[info.Name]
+		if caught {
+			if givenName != info.Name {
+				fmt.Printf("\nYou have caught a %s and named it %s!\n", info.Name, givenName)
+			} else {
+				fmt.Printf("\nYou have caught a %s!\n", info.Name)
+			}
+		}
+		fmt.Printf("\nName: %s", info.Name)
+		fmt.Printf("\nHeight: %v", info.Height)
+		fmt.Printf("\nWeight: %v", info.Weight)
+		fmt.Printf("\nStats:")
+		for _, content := range info.Stats {
+			fmt.Printf("\n  --%s: %v", content.Stat.Name, content.BaseStat)
+		}
+		fmt.Printf("\nType(s):")
+		for _, content := range info.Types {
+			fmt.Printf("\n  --%s", content.Type.Name)
+		}
+		fmt.Printf("\n\n")
+
+		return nil
+
+	}
+}
+
+func commandTeam(cfg *config) error {
+	if len(cfg.pokedexCaught) == 0 {
+		fmt.Printf("\nYou haven't caught any Pokemon yet! Get out there!\n\n")
+		return nil
+	}
+	fmt.Printf("\nYou have caught the following Pokemon: ")
+	for name, givenName := range cfg.pokedexCaught {
+		if givenName != name {
+			fmt.Printf("\n * %s the %s", givenName, name)
+		} else {
+			fmt.Printf("\n * %s", name)
+		}
+	}
+	fmt.Printf("\n\nThey are your team, treat them well!\n\n")
 
 	return nil
 }
