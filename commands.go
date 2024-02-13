@@ -212,7 +212,6 @@ func commandCatch(cfg *config) error {
 			return err
 		}
 		cfg.pokemonCount = resp.Count
-		fmt.Println(*cfg.pokemonCount)
 	}
 	if cfg.specificPokemon == nil {
 		randomID := rand.Intn(*cfg.pokemonCount-1) + 1
@@ -220,7 +219,6 @@ func commandCatch(cfg *config) error {
 			randomID = 10000 + (randomID - 1025)
 		}
 		randomIDString := fmt.Sprint(randomID)
-		fmt.Println(randomIDString)
 		cfg.specificPokemon = &randomIDString
 
 	}
@@ -230,7 +228,64 @@ func commandCatch(cfg *config) error {
 		return err
 	}
 
-	fmt.Printf("\nAttempting to catch %s...\n\n", resp.Name)
+	fmt.Printf("\nYou see a wild %s!\n", resp.Name)
+
+	givenName, caught := cfg.pokedexCaught[resp.Name]
+	if caught {
+		fmt.Printf("\nYou have already caught a %s and named it %s, so you let this one go...\n\n", resp.Name, givenName)
+		return nil
+	}
+
+	_, seen := cfg.pokedexSeen[resp.Name]
+	if seen {
+		fmt.Printf("\nIt won't get away this time!\n")
+	}
+
+	fmt.Printf("\nYou throw a PokeBall at %s...\n", resp.Name)
+
+	catchDifficulty := (resp.BaseExperience / 2) * (resp.Height / 4) * (resp.Weight / 4)
+	catchProb := 0.90
+	if catchDifficulty > 100000 {
+		catchProb = 0.10
+	} else if catchDifficulty > 75000 {
+		catchProb = 0.20
+	} else if catchDifficulty > 50000 {
+		catchProb = 0.30
+	} else if catchDifficulty > 25000 {
+		catchProb = 0.50
+	} else if catchDifficulty > 10000 {
+		catchProb = 0.70
+	} else if catchDifficulty > 5000 {
+		catchProb = 0.80
+	}
+
+	if rand.Float64() < catchProb {
+		// CAUGHT
+		fmt.Printf("\n%s was successfully caught!\n\n", resp.Name)
+		fmt.Println("Name your newly caught Pokemon: ")
+		var newName string
+		fmt.Scanln(&newName)
+		if newName == "" {
+			newName = resp.Name
+		}
+		cfg.pokedexCaught[resp.Name] = newName
+		if !seen {
+			fmt.Printf("\n%s has been added to your team and %s has been added to your Pokedex!\n\n", newName, resp.Name)
+		} else {
+			fmt.Printf("\n%s was added to your team!\n\n", newName)
+		}
+		cfg.pokedexSeen[resp.Name] = resp
+
+	} else {
+		// GOT AWAY
+		fmt.Printf("\n%s got away!\n", resp.Name)
+		if !seen {
+			fmt.Printf("\nHowever, %s has been added to your Pokedex!\n\n", resp.Name)
+			cfg.pokedexSeen[resp.Name] = resp
+		} else {
+			fmt.Println()
+		}
+	}
 
 	return nil
 }
